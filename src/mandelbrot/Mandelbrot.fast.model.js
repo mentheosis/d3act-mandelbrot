@@ -169,7 +169,7 @@ class FastMandelbrot {
       }
       ctx.sendColumn(columnData)
     }
-    console.log("fast pixel space loops done", this.rangeStartX, this.rangeEndX)
+    console.log("Worker finished looping", this.rangeStartX, this.rangeEndX)
     return true
   }
 

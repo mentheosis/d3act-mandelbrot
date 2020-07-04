@@ -146,13 +146,11 @@ class MandelbrotCanvas extends React.Component {
     context.canvas.addEventListener('mouseup', (e) => {
 
       let unitsPerPixelX = this.axesData.graphWidth / this.ctx.canvas.width
-      let testX = (e.layerX - this.axesData.translateXpixel) * unitsPerPixelX
       let unitsPerPixelY = this.axesData.graphHeight / this.ctx.canvas.height
-      let testY = (e.layerY - this.axesData.translateYpixel) * -unitsPerPixelY
       let clickedPointNumericX = (e.layerX - this.axesData.translateXpixel) * unitsPerPixelX
       let clickedPointNumericY = (e.layerY - this.axesData.translateYpixel) * -unitsPerPixelY
 
-      console.log("mouseup event\n", testX, testY, "\n", clickedPointNumericX, clickedPointNumericY)
+      console.log("mouseup event\n", "X:", clickedPointNumericX, "\nY:", clickedPointNumericY)
 
     }, false);
 
