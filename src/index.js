@@ -7,7 +7,6 @@ import { CirclesSvg } from './mandelbrot/randomCirclesSvg'
 import { Canvs, CirclesCanvas } from './mandelbrot/randomCirclesCanvas'
 import { MandelbrotCanvas } from './mandelbrot/Mandelbrot.canvas'
 
-
 ReactDOM.render(
   <React.StrictMode>
     {/*
@@ -23,6 +22,7 @@ ReactDOM.render(
       width="1000"
       height="600"
       multi={32}/>
+
     <CirclesSvg />
     <div style={{
         marginBottom: "2.5%"

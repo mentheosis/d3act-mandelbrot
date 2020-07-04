@@ -32,7 +32,9 @@ onmessage = function(m) {
       translateXpixel: mc.model.translateXpixel,
       translateYpixel: mc.model.translateYpixel,
       graphWidth: mc.model.graphWidth,
-      graphHeight: mc.model.graphHeight
+      graphHeight: mc.model.graphHeight,
+      graphCenterX: mc.model.viewportCenterX,
+      graphCenterY: mc.model.viewportCenterY
     });
   } else if (m.data.type == "initializedCanvas") {
     mc.model.draw()

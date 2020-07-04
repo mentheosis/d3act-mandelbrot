@@ -42,7 +42,7 @@ const CirclesSvg = () => {
       height="40vh"
       viewBox="-50 -20 100 40"
       style={{
-        margin: "2.5% 2.5% 0 2.5%",
+        margin: "0 2.5% 0 2.5%",
         border: "2px solid black"}}
     >
       {dataset.map(([x, y], i) => (
@@ -63,78 +63,4 @@ const CirclesSvg = () => {
   )
 }
 
-const Svg = () => {
-  return (
-    <svg style={{
-      margin: "2.5%",
-      width: "95%",
-      height: "80%",
-      border: "2px solid red"
-    }} />
-  )
-}
-
-/*
-const Circle = () => {
-  return (
-    <svg>
-      <circle
-        cx="150"
-        cy="77"
-        r="0.5"
-      />
-    </svg>
-  )
-}
-
-const AnimatedCircles = () => {
-  //const [visibleCircles, setVisibleCircles] = useState(
-    //generateCircles()
-  //);
-  var visibleCircles;
-  var setVisibleCircles;
-
-  useInterval(() => {
-    setVisibleCircles(generateCircles())
-  }, 2000);
-
-  return (
-    <svg viewBox="0 0 100 20">
-      {allCircles.map(d => (
-        <AnimatedCircle
-          key={d}
-          index={d}
-          isShowing={visibleCircles.includes(d)}
-        />
-      ))}
-    </svg>
-  )
-}
-
-const AnimatedCircle = ({ index, isShowing }) => {
-  const wasShowing = useRef(false)
-  useEffect(() => {
-    wasShowing.current = isShowing
-  }, [isShowing])
-  const style = useSpring({
-    config: {
-      duration: 1200,
-    },
-    r: isShowing ? 6 : 0,
-    opacity: isShowing ? 1 : 0,
-  })
-  return (
-    <animated.circle {...style}
-      cx={index * 15 + 10}
-      cy="10"
-      fill={
-        !isShowing          ? "tomato" :
-        !wasShowing.current ? "cornflowerblue" :
-                              "lightgrey"
-      }
-    />
-  )
-}
-*/
-
-export {Svg, CirclesSvg};
+export {CirclesSvg};

@@ -2,9 +2,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import _ from 'lodash'
 import {SteadyCanvas} from '../canvas/SteadyCanvas'
 import {renderMandelbrot} from './Mandelbrot.model'
-//import {FastMandelbrot} from './Mandelbrot.fast.model'
 import Worker from './Mandelbrot.worker'
-//import Worker from './Mandelbrot.fast.model'
+import {Xaxis, Yaxis} from '../graph/Axes'
 
 class MandelbrotCanvas extends React.Component {
   constructor(props) {
@@ -61,6 +60,7 @@ class MandelbrotCanvas extends React.Component {
   // different debounce params for after and before
   drawAxesBefore(m) {
     this.axesData = m.data
+    console.log("axesData", this.axesData)
     this.drawAxes(this.ctx,m.data)
   }
 
@@ -142,7 +142,7 @@ class MandelbrotCanvas extends React.Component {
       let clickedPointNumericX = (e.layerX - this.axesData.translateXpixel) * unitsPerPixelX
       let clickedPointNumericY = (e.layerY - this.axesData.translateYpixel) * -unitsPerPixelY
 
-      console.log("mouseup event",
+      console.log("mouseup event",this.axesData,
         "\nNum X:", clickedPointNumericX,
         "\nNum Y:", clickedPointNumericY,
         "\nPix X:", e.layerX,
@@ -164,16 +164,36 @@ class MandelbrotCanvas extends React.Component {
 
   render() {
     return (
-      <SteadyCanvas
-        contextRef = { this.saveContext }
-        width = {this.props.width}
-        height = {this.props.height}
+      <div
         style={{
-          margin: "2.5% 2.5% 0 2.5%",
-          border: "2px solid black",
-          cursor: "crosshair"
+          margin: "15px 2.5%",
+          width: parseInt(this.props.width)+30
         }}
-      />
+      >
+        <Yaxis
+          height = {parseInt(this.props.height)+4}
+          width = "25"
+          domainLeft = {this.axesData}
+          domainRight = {this.axesData}
+        />
+        <SteadyCanvas
+          contextRef = { this.saveContext }
+          width = {this.props.width}
+          height = {this.props.height}
+          style={{
+            border: "2px solid black",
+            cursor: "crosshair"
+          }}
+        />
+        <Xaxis
+          width = {parseInt(this.props.width)+4}
+          offset = "25"
+          height = "25"
+          domainLeft = {this.axesData}
+          domainRight = {this.axesData}
+        />
+      </div>
+
   )}
 }
 
