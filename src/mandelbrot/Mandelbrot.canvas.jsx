@@ -141,19 +141,20 @@ class MandelbrotCanvas extends React.Component {
     }
 
     /* todo: figure out mouse events
-    let clicked = false;
-    context.canvas.on('mousedown', function() {
-      clicked = true;
-      //render(d3.mouse(this));
-    });
-    context.canvas.on('mousemove', function() {
-      console.log("mousemove")
-      //if (clicked) render(d3.mouse(this));
-    });
-    context.canvas.on('mouseup', function() {
-      clicked = false;
-    });
     */
+    let clicked = false;
+    context.canvas.addEventListener('mouseup', (e) => {
+
+      let unitsPerPixelX = this.axesData.graphWidth / this.ctx.canvas.width
+      let testX = (e.layerX - this.axesData.translateXpixel) * unitsPerPixelX
+      let unitsPerPixelY = this.axesData.graphHeight / this.ctx.canvas.height
+      let testY = (e.layerY - this.axesData.translateYpixel) * -unitsPerPixelY
+      let clickedPointNumericX = (e.layerX - this.axesData.translateXpixel) * unitsPerPixelX
+      let clickedPointNumericY = (e.layerY - this.axesData.translateYpixel) * -unitsPerPixelY
+
+      console.log("mouseup event\n", testX, testY, "\n", clickedPointNumericX, clickedPointNumericY)
+
+    }, false);
 
   }
 
@@ -161,11 +162,13 @@ class MandelbrotCanvas extends React.Component {
     console.log("mounted")
   }
 
+  /*
   componentWillUnmount() {
-    for (w in this.workers) {
+    for (let w in this.workers) {
       w.terminate();
     }
   }
+  */
 
   render() {
     return (

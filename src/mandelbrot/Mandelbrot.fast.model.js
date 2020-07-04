@@ -17,17 +17,18 @@ class FastMandelbrot {
     }
 
     // model and coloring params
-    this.max_iteration = 1000000 // 260 escape threshold
-    this.eps = 0.0001 // minimum derivative threshold
+    // much of this model came from here: https://www.math.univ-toulouse.fr/~cheritat/wiki-draw/index.php/Mandelbrot_set
+    this.max_iteration = 1000000 // escape threshold - If this isnt big enough you will see white in the image
+    this.eps = 0.001 // minimum derivative threshold for the interior points (saves iterations on interior)
     this.p2 = 1000000 // square of threshold for potential coloring (started at 1000^2)
-    this.K = 1000 // constant for changing the coloring of potentials method
+    this.K = 2 //1000 // constant for changing the periodicity of the coloring. Iterations method seem to like numbers < 10, but potentials method can be anything <1 or >1000
 
     // we want our canvas to represent a virtual graph of the complex number space
     // these parameters are the size of that graph
-    this.graphWidth = 1 //0.0005
+    this.graphWidth = 0.0001 // this is the primary size param, basically the zoom level
     this.graphHeight = this.graphWidth*0.6
-    this.viewportCenterX = -0.7398
-    this.viewportCenterY =  0.1488
+    this.viewportCenterX = -0.684015 // the graph will stay centered on this numeric coord no matter the zoom
+    this.viewportCenterY =  0.343941 // the graph will stay centered on this numeric coord no matter the zoom
 
     // these allow you to set the center of the viewport to a specific numerical coordinate
     this.originTranslateXnumerical = (-1*this.viewportCenterX) + ((this.canvas.width / 2) * (this.graphWidth / this.canvas.width))
@@ -78,10 +79,21 @@ class FastMandelbrot {
     if (iterations == max_iteration)
       return 'white'
     else {
-      let blue = (1-(iterations/max_iteration)) * 255
-      let red = (iterations*iterations)/(max_iteration)*255
-      let green = blue * 0.75
-      if (blue < 75 ) { green = 255 }
+      let V = Math.log(iterations)/(this.K)
+
+      let c1 = 1/Math.log(2)
+      let c2 = 0.2345*(c1)
+      let c3 = 8.0345*(c1)
+
+      let red = 255*((1 - Math.cos(c1*V))/2)
+      let green = 255*((1 - Math.cos(c2*V))/2)
+      let blue = 255*((1 - Math.cos(c3*V))/2)
+
+      //let blue = (1-(iterations/max_iteration)) * 255
+      //let red = (iterations*iterations)/(max_iteration)*255
+      //let green = blue * 0.75
+      //if (blue < 75 ) { green = 255 }
+
       return `rgb(${red},${green},${blue})`
     }
   }
@@ -121,7 +133,7 @@ class FastMandelbrot {
             // just square eps once instead of in the loop..
             let eps_sq = eps*eps
             let iteration = 0
-            let pow = 1
+            //let pow = 1
             let color = ''
             while ( iteration < max_iteration) {
                 if (this.c_modulus(dz_r, dz_i) <= eps_sq) {
@@ -129,8 +141,10 @@ class FastMandelbrot {
                   break
                 }
                 let r2 = this.c_modulus(z_r, z_i)
-                if ( r2 > this.p2) {
-                  color = this.colorByPotential(r2, pow, iteration)
+                //if ( r2 > this.p2) {
+                //  color = this.colorByPotential(r2, pow, iteration)
+                if ( r2 > 4) {
+                  color = this.colorByIterations(iteration, max_iteration)
                   break
                 }
 
@@ -142,7 +156,7 @@ class FastMandelbrot {
                 z_i = new_z[1]
                 dz_r = new_dz[0]
                 dz_i = new_dz[1]
-                pow = pow*2
+                //pow = pow*2
                 iteration++
             }
 
@@ -159,73 +173,7 @@ class FastMandelbrot {
     return true
   }
 
-
-  drawMandelbrotRecursive(Px, Py) {
-    if (Px == this.canvasLeft && Py == this.canvasTop) {
-      console.log("strting recurse")
-    }
-    console.log("allrecurse", Px, Py)
-    if (Px % 100 == 0 && Py % 100 == 0) {
-      console.log("recursing")
-    }
-
-    let c_r = this.scaleX(Px, this.canvas, this.graphWidth)
-    let c_i = this.scaleY(Py, this.canvas, this.graphHeight)
-
-    // note that we start with c instead of 0, to avoid multiplying the derivative by 0
-    let z_r = c_r
-    let z_i = c_i
-
-    let dz_r = 1
-    let dz_i = 0
-
-    // just square eps once instead of in the loop..
-    let eps_sq = this.eps*this.eps
-    let iteration = 0
-
-    while ( iteration < this.max_iteration) {
-        if (this.c_modulus(dz_r, dz_i) <= eps_sq) {
-          break
-        }
-        if (this.c_modulus(z_r, z_i) > 4) {
-          break
-        }
-
-        let new_z = this.c_mult(z_r, z_i, z_r, z_i)
-        new_z = this.c_add(new_z[0], new_z[1], c_r, c_i)
-        let new_dz = this.c_mult(2*dz_r, 2*dz_i, z_r, z_i)
-
-        z_r = new_z[0]
-        z_i = new_z[1]
-        dz_r = new_dz[0]
-        dz_i = new_dz[1]
-        iteration++
-    }
-
-    if (Px == this.canvasLeft && Py == this.canvasTop) {
-      console.log("first recurse done")
-    }
-
-    let color = this.colorByIterations(iteration, this.max_iteration)
-    this.ctx.fillRect(Px,Py,1,-1, color)
-
-    if (Px < this.canvasRight) {
-      requestAnimationFrame(() => {
-        this.drawMandelbrotRecursive(Px+1, Py)
-      })
-    } else if (Py > this.canvasBottom) {
-      requestAnimationFrame(() => {
-        this.drawMandelbrotRecursive(this.canvasLeft, Py-1)
-      })
-    }
-    else {
-      return console.log("Recursing done")
-    }
-
-  }
-
   draw() {
-    //this.drawMandelbrotRecursive(this.canvasLeft, this.canvasTop)
     this.drawMandelbrot(this.ctx, this.canvas, this.max_iteration, this.eps, this.graphWidth, this.graphHeight, this.canvasTop, this.canvasRight, this.canvasBottom, this.canvasLeft)
   }
 

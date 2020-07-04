@@ -30,7 +30,9 @@ onmessage = function(m) {
       canvasBottom: mc.model.canvasBottom,
       canvasLeft: mc.model.canvasLeft,
       translateXpixel: mc.model.translateXpixel,
-      translateYpixel: mc.model.translateYpixel
+      translateYpixel: mc.model.translateYpixel,
+      graphWidth: mc.model.graphWidth,
+      graphHeight: mc.model.graphHeight
     });
   } else if (m.data.type == "initializedCanvas") {
     mc.model.draw()
