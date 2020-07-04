@@ -19,7 +19,10 @@ ReactDOM.render(
       <MandelbrotCanvas width="1000" height="600" fast={true}/>
     */}
 
-    <MandelbrotCanvas width="1000" height="600" multi={32}/>
+    <MandelbrotCanvas
+      width="1000"
+      height="600"
+      multi={32}/>
     <CirclesSvg />
     <div style={{
         marginBottom: "2.5%"

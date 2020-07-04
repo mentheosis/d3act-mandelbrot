@@ -1,7 +1,8 @@
 
 class FastMandelbrot {
 
-  constructor(canvasWidth, canvasHeight, xChunkSize, xChunkIndex, postMessage) {
+  constructor(canvasWidth, canvasHeight, xChunkSize, xChunkIndex, postMessage, id) {
+    this.id = id
     // recreate the ctx api for posting inputs across the thread
     this.ctx = {
       fillRect: (x,y,w,h,c) => {
@@ -21,14 +22,16 @@ class FastMandelbrot {
     this.max_iteration = 1000000 // escape threshold - If this isnt big enough you will see white in the image
     this.eps = 0.001 // minimum derivative threshold for the interior points (saves iterations on interior)
     this.p2 = 1000000 // square of threshold for potential coloring (started at 1000^2)
-    this.K = 2 //1000 // constant for changing the periodicity of the coloring. Iterations method seem to like numbers < 10, but potentials method can be anything <1 or >1000
+    this.potK = 3 // constant for changing the periodicity of the coloring can be anything <1 or >1000
+    this.iterK = 0.01 //1000 // constant for changing the periodicity of the coloring. Iterations method seem to like small numbers like 0.5
+    this.potCutoff = 1000 //switch from potentials to iterations color at this iteration count
 
     // we want our canvas to represent a virtual graph of the complex number space
     // these parameters are the size of that graph
-    this.graphWidth = 0.0001 // this is the primary size param, basically the zoom level
+    this.graphWidth = 0.1 //0.00006 //0.00005 // this is the primary size param, basically the zoom level
     this.graphHeight = this.graphWidth*0.6
-    this.viewportCenterX = -0.684015 // the graph will stay centered on this numeric coord no matter the zoom
-    this.viewportCenterY =  0.343941 // the graph will stay centered on this numeric coord no matter the zoom
+    this.viewportCenterX =  -0.108063000 // the graph will stay centered on this numeric coord no matter the zoom
+    this.viewportCenterY =  0.89192449 // the graph will stay centered on this numeric coord no matter the zoom
 
     // these allow you to set the center of the viewport to a specific numerical coordinate
     this.originTranslateXnumerical = (-1*this.viewportCenterX) + ((this.canvas.width / 2) * (this.graphWidth / this.canvas.width))
@@ -46,6 +49,10 @@ class FastMandelbrot {
     // allow multiple worker threads to work on different regions
     this.rangeStartX = typeof(xChunkSize) != "undefined" ? this.canvasLeft + (xChunkSize * xChunkIndex) : this.canvasLeft
     this.rangeEndX = typeof(xChunkSize) != "undefined" ? this.rangeStartX + xChunkSize : this.canvasRight
+    if (this.canvasRight - this.rangeEndX < xChunkSize) {
+      // fix rounding error by making sure the last worker goes all the way to the edge
+      this.rangeEndX = this.canvasRight
+    }
 
   }
 
@@ -79,7 +86,7 @@ class FastMandelbrot {
     if (iterations == max_iteration)
       return 'white'
     else {
-      let V = Math.log(iterations)/(this.K)
+      let V = Math.log(Math.log(iterations))/(this.iterK)
 
       let c1 = 1/Math.log(2)
       let c2 = 0.2345*(c1)
@@ -100,7 +107,7 @@ class FastMandelbrot {
 
   colorByPotential(R2, pow, iteration) {
     let V = R2 < 1 ? 0 : Math.log(R2)/pow
-    V = Math.log(V)/(this.K)
+    V = Math.log(V)/(this.potK)
     //let g = (1-V) * Math.cos(iteration/5) * 255
     //let b = (1-V) * Math.cos(iteration/10) * 255
 
@@ -133,7 +140,7 @@ class FastMandelbrot {
             // just square eps once instead of in the loop..
             let eps_sq = eps*eps
             let iteration = 0
-            //let pow = 1
+            let pow = 1
             let color = ''
             while ( iteration < max_iteration) {
                 if (this.c_modulus(dz_r, dz_i) <= eps_sq) {
@@ -141,10 +148,13 @@ class FastMandelbrot {
                   break
                 }
                 let r2 = this.c_modulus(z_r, z_i)
-                //if ( r2 > this.p2) {
-                //  color = this.colorByPotential(r2, pow, iteration)
-                if ( r2 > 4) {
-                  color = this.colorByIterations(iteration, max_iteration)
+                if ( r2 > this.p2) {
+                  if (iteration < this.potCutoff) {
+                    color = this.colorByPotential(r2, pow, iteration)
+                  }
+                  else {
+                    color = this.colorByIterations(iteration, max_iteration)
+                  }
                   break
                 }
 
@@ -156,7 +166,9 @@ class FastMandelbrot {
                 z_i = new_z[1]
                 dz_r = new_dz[0]
                 dz_i = new_dz[1]
-                //pow = pow*2
+                if (iteration < this.potCutoff) {
+                  pow = pow*2
+                }
                 iteration++
             }
 
@@ -169,7 +181,7 @@ class FastMandelbrot {
       }
       ctx.sendColumn(columnData)
     }
-    console.log("Worker finished looping", this.rangeStartX, this.rangeEndX)
+    console.log("Worker finished looping",this.id, this.rangeStartX, this.rangeEndX)
     return true
   }
 

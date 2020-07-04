@@ -10,10 +10,9 @@ class MandelbrotCanvas extends React.Component {
   constructor(props) {
     super(props)
     this.saveContext = this.saveContext.bind(this);
-    this.parseThreadedCanvasMessage = this.parseThreadedCanvasMessage.bind(this);
     this.onMessageFromWorker = this.onMessageFromWorker.bind(this);
     this.initializeCanvas = _.once(this.initializeCanvas)
-    this.drawAxesBefore = _.debounce(this.drawAxesBefore, 500, {leading:true, trailing:false})
+    this.drawAxesBefore = _.once(this.drawAxesBefore)
     this.drawAxesAfter = _.debounce(this.drawAxesAfter, 500, {leading:false, trailing:true})
     this.workers = {}
 
@@ -46,7 +45,7 @@ class MandelbrotCanvas extends React.Component {
         this.ctx.fillStyle = pixel.color
         this.ctx.fillRect(pixel.Px, pixel.Py, 1, -1)
       }
-      this.drawAxesAfter()
+      //this.drawAxesAfter()
     }
     else {
       console.log("Ignoring message", m.data)
@@ -86,13 +85,9 @@ class MandelbrotCanvas extends React.Component {
   }
 
   initializeCanvas(ctx, data) {
-    console.log("\n\ninitializing canvas translate and scale\n\n")
+    console.log("\n\ninitializing canvas translate and scale\n\n", data)
     ctx.translate(data.translateXpixel, data.translateYpixel)
     ctx.scale(1, -1)
-  }
-
-  parseThreadedCanvasMessage(m) {
-
   }
 
 
@@ -140,9 +135,6 @@ class MandelbrotCanvas extends React.Component {
       })
     }
 
-    /* todo: figure out mouse events
-    */
-    let clicked = false;
     context.canvas.addEventListener('mouseup', (e) => {
 
       let unitsPerPixelX = this.axesData.graphWidth / this.ctx.canvas.width
@@ -150,7 +142,11 @@ class MandelbrotCanvas extends React.Component {
       let clickedPointNumericX = (e.layerX - this.axesData.translateXpixel) * unitsPerPixelX
       let clickedPointNumericY = (e.layerY - this.axesData.translateYpixel) * -unitsPerPixelY
 
-      console.log("mouseup event\n", "X:", clickedPointNumericX, "\nY:", clickedPointNumericY)
+      console.log("mouseup event",
+        "\nNum X:", clickedPointNumericX,
+        "\nNum Y:", clickedPointNumericY,
+        "\nPix X:", e.layerX,
+        "\nPix Y:", e.layerY)
 
     }, false);
 
@@ -160,13 +156,11 @@ class MandelbrotCanvas extends React.Component {
     console.log("mounted")
   }
 
-  /*
   componentWillUnmount() {
     for (let w in this.workers) {
-      w.terminate();
+      this.workers[w].terminate();
     }
   }
-  */
 
   render() {
     return (
@@ -177,6 +171,7 @@ class MandelbrotCanvas extends React.Component {
         style={{
           margin: "2.5% 2.5% 0 2.5%",
           border: "2px solid black",
+          cursor: "crosshair"
         }}
       />
   )}

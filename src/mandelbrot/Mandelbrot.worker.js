@@ -3,7 +3,6 @@ import {FastMandelbrot} from './Mandelbrot.fast.model'
 
 class MandelbrotContainer {
   constructor() {
-    console.log("worker constructor")
   }
 }
 
@@ -21,7 +20,8 @@ onmessage = function(m) {
       m.data.canvasHeight,
       m.data.xChunkSize,
       m.data.xChunkIndex,
-      mc.postMessage
+      mc.postMessage,
+      mc.id
     )
     mc.postMessage({
       type: "modelCreated",
