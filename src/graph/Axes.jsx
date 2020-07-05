@@ -5,15 +5,14 @@ class Axis extends React.Component {
   constructor(props) {
     super(props)
     this.generateTicks = this.generateTicks.bind(this);
-    this.state = {
-      ticks: this.generateTicks()
-    }
 
     /////// For Y-axes
     if (['y','Y'].includes(props.direction)) {
       this.rangeMax = this.props.height
-      this.dAxis = `M ${this.props.width-3} 0 V ${this.props.height}`
-      this.dTick = `M ${this.props.width-3} 0 l -5 0`
+      this.labelTop = -15
+      this.dAxis = `M ${this.props.mirror ? 3 : this.props.width-3} 0 V ${this.props.height}`
+      this.dTick = `M ${this.props.mirror ? 8 : this.props.width-3} 0 l -5 0`
+
       this.gTransform = (offset) => {
         return `translate(0, ${offset || 0})`
       }
@@ -21,28 +20,35 @@ class Axis extends React.Component {
         return 'end'
       }
       this.labelTransform = (value) => {
-        return `translate(${this.props.width-10}px, ${value == 0 ? "8px" : value == 100 ? "-3px" : "3px"})`
+        return `translate(${this.props.width-10}px, ${value == this.props.domainMin ? "8px" : value == this.props.domainMax ? "-3px" : "3px"})`
       }
 
     /////// For X-axes
     } else {
       this.rangeMax = this.props.width
-      this.dAxis = `M 0 0.5 h ${this.props.width}`
-      this.dTick = `M 0 0 l 0 6`
+      this.labelTop = this.props.mirror ? -3 : 22
+      this.dAxis = `M 0 ${this.props.mirror ? this.props.height : 0.5} h ${this.props.width}`
+      this.dTick = `M 0 ${this.props.mirror ? this.props.height-6 : 0} l 0 6`
       this.gTransform = (offset) => {
         return `translate(${offset || 0}, 0)`
       }
       this.textAnchor = (value) => {
-        return value == 0 ? "start" : value == 100 ? "end" : "middle"
+        return value == this.props.domainMin ? "start" : value == this.props.domainMax ? "end" : "middle"
       }
       this.labelTransform = (value) => {
         return "translateY(20px)"
       }
     }
 
+    // must initialize state after the above init because generateTicks uses some of those values
+    this.state = {
+      ticks: this.generateTicks()
+    }
+
   }
 
   generateTicks() {
+    let domain = ['y','Y'].includes(this.props.direction) ? [this.props.domainMax, this.props.domainMin] : [this.props.domainMin, this.props.domainMax]
     let scale = d3.scaleLinear()
       .domain([this.props.domainMin, this.props.domainMax])
       .range([0, this.rangeMax])
@@ -65,15 +71,24 @@ class Axis extends React.Component {
 
   render() {
     return (
-      <svg style={{
-        width: this.props.width,
+      <div style = {{
+        width: this.props.width + (this.props.marginRight || 0) + (this.props.marginLeft || 0),
         height: this.props.height,
-        marginLeft: this.props.margin
+        display: 'inline-block',
+        position: 'relative',
       }}>
-        <path
-          d={this.dAxis}
-          stroke="currentColor"
-        />
+        <svg style={{
+          marginLeft: this.props.marginLeft,
+          marginRight: this.props.marginRight,
+          width: this.props.width,
+          height: this.props.height,
+          display: 'inline',
+          overflow: 'visible',
+        }}>
+          <path
+            d={this.dAxis}
+            stroke="currentColor"
+          />
           {this.state.ticks.map(({ value, offset }) => (
             <g
               key={value}
@@ -94,7 +109,18 @@ class Axis extends React.Component {
               </text>
             </g>
           ))}
-      </svg>
+        </svg>
+        <div style={{
+          position: 'absolute',
+          top: this.labelTop,
+          left: (this.props.marginLeft || (this.props.mirror ? 0 : -5)),
+          width: this.props.width,
+          fontSize: '10px',
+          textAlign: 'center'
+        }}>
+          { this.props.label }
+        </div>
+      </div>
   )}
 }
 

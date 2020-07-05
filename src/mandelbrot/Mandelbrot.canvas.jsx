@@ -105,7 +105,6 @@ class MandelbrotCanvas extends React.Component {
   }
 
   initializeCanvas(ctx, data) {
-    console.log("\n\ninitializing canvas translate and scale\n\n", data)
     ctx.translate(data.translateXpixel, data.translateYpixel)
     ctx.scale(1, -1)
   }
@@ -187,15 +186,27 @@ class MandelbrotCanvas extends React.Component {
       <div
         style={{
           margin: "15px 2.5%",
-          width: parseInt(this.props.width)+this.yAxisWidth+10
+          width: parseInt(this.props.width)+(this.yAxisWidth*2)+10
         }}
       >
+        <Axis
+          width = {parseInt(this.props.width)+4}
+          height = "30"
+          direction = "X"
+          marginLeft = {this.yAxisWidth}
+          marginRight = {this.yAxisWidth}
+          domainMin = "0"
+          domainMax = "1000"
+          label = 'Pixels'
+          mirror = {true}
+        />
         <Axis
           width = {this.yAxisWidth}
           height = {parseInt(this.props.height)+4}
           direction = "Y"
           domainMin = {this.state.axesYmin}
           domainMax = {this.state.axesYmax}
+          label = 'Imaginary cmpnt'
         />
         <SteadyCanvas
           contextRef = { this.saveContext }
@@ -207,13 +218,25 @@ class MandelbrotCanvas extends React.Component {
           }}
         />
         <Axis
+          width = {this.yAxisWidth}
+          height = {parseInt(this.props.height)+4}
+          direction = "Y"
+          domainMin = {0}
+          domainMax = {600}
+          label = 'Pixels'
+          mirror = {true}
+        />
+        <Axis
           width = {parseInt(this.props.width)+4}
-          height = "25"
+          height = "35"
           direction = "X"
-          margin = {this.yAxisWidth}
+          marginLeft = {this.yAxisWidth}
+          marginRight = {this.yAxisWidth}
           domainMin = {this.state.axesXmin}
           domainMax = {this.state.axesXmax}
+          label = 'Real component'
         />
+
       </div>
 
   )}
