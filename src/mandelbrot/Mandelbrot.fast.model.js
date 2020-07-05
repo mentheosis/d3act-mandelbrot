@@ -181,7 +181,7 @@ class FastMandelbrot {
       }
       ctx.sendColumn(columnData)
     }
-    console.log("Worker finished looping",this.id, this.rangeStartX, this.rangeEndX)
+    //console.log("Worker finished looping",this.id, this.rangeStartX, this.rangeEndX)
     return true
   }
 

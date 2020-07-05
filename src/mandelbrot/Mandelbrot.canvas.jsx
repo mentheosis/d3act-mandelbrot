@@ -3,7 +3,7 @@ import _ from 'lodash'
 import {SteadyCanvas} from '../canvas/SteadyCanvas'
 import {renderMandelbrot} from './Mandelbrot.model'
 import Worker from './Mandelbrot.worker'
-import {Xaxis, Yaxis} from '../graph/Axes'
+import {Axis, Yaxis} from '../graph/Axes'
 
 class MandelbrotCanvas extends React.Component {
   constructor(props) {
@@ -13,8 +13,18 @@ class MandelbrotCanvas extends React.Component {
     this.initializeCanvas = _.once(this.initializeCanvas)
     this.drawAxesBefore = _.once(this.drawAxesBefore)
     this.drawAxesAfter = _.debounce(this.drawAxesAfter, 500, {leading:false, trailing:true})
+    this.updateAxesDomain = _.debounce(this.updateAxesDomain.bind(this), 500, {leading:true, trailing:false})
     this.workers = {}
+    this.yAxisWidth = 45
 
+    this.state = {
+      axesXmax: 0,
+      axesXmin: 0,
+      axesYmax: 0,
+      axesYmin: 0,
+    }
+
+    /*
     this.test = _.once((m) => {
       console.log("got draw col", m.data)
       for (let i in m.data.columnData) {
@@ -24,12 +34,13 @@ class MandelbrotCanvas extends React.Component {
         this.ctx.fillRect(0, pixel.Py, 10, -10)
       }
     })
-
+    */
   }
 
 
   onMessageFromWorker(m) {
     if (m.data.type == 'modelCreated') {
+      this.updateAxesDomain(m)
       this.initializeCanvas(this.ctx, m.data)
       this.drawAxesBefore(m)
       this.workers[m.data.id].postMessage({type: "initializedCanvas"})
@@ -50,6 +61,15 @@ class MandelbrotCanvas extends React.Component {
       console.log("Ignoring message", m.data)
       //this.ctx[m.data.type].apply(this.ctx, m.data.params)
     }
+  }
+
+  updateAxesDomain(m) {
+    this.setState({
+      axesXmax: m.data.graphCenterX + (m.data.graphWidth/2),
+      axesXmin: m.data.graphCenterX - (m.data.graphWidth/2),
+      axesYmax: m.data.graphCenterY + (m.data.graphHeight/2),
+      axesYmin: m.data.graphCenterY - (m.data.graphHeight/2),
+    })
   }
 
   // different debounce params for after and before
@@ -167,14 +187,15 @@ class MandelbrotCanvas extends React.Component {
       <div
         style={{
           margin: "15px 2.5%",
-          width: parseInt(this.props.width)+30
+          width: parseInt(this.props.width)+this.yAxisWidth+10
         }}
       >
-        <Yaxis
+        <Axis
+          width = {this.yAxisWidth}
           height = {parseInt(this.props.height)+4}
-          width = "25"
-          domainLeft = {this.axesData}
-          domainRight = {this.axesData}
+          direction = "Y"
+          domainMin = {this.state.axesYmin}
+          domainMax = {this.state.axesYmax}
         />
         <SteadyCanvas
           contextRef = { this.saveContext }
@@ -185,12 +206,13 @@ class MandelbrotCanvas extends React.Component {
             cursor: "crosshair"
           }}
         />
-        <Xaxis
+        <Axis
           width = {parseInt(this.props.width)+4}
-          offset = "25"
           height = "25"
-          domainLeft = {this.axesData}
-          domainRight = {this.axesData}
+          direction = "X"
+          margin = {this.yAxisWidth}
+          domainMin = {this.state.axesXmin}
+          domainMax = {this.state.axesXmax}
         />
       </div>
 

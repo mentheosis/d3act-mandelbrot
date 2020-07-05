@@ -1,26 +1,66 @@
 import React, {useMemo} from 'react';
 import * as d3 from 'd3'
-import _ from 'lodash'
 
-/////////////////////////////////////
-///
-/// The X axis
-///
-/////////////////////////////////////
-class Xaxis extends React.Component {
+class Axis extends React.Component {
   constructor(props) {
     super(props)
+    this.generateTicks = this.generateTicks.bind(this);
+    this.state = {
+      ticks: this.generateTicks()
+    }
+
+    /////// For Y-axes
+    if (['y','Y'].includes(props.direction)) {
+      this.rangeMax = this.props.height
+      this.dAxis = `M ${this.props.width-3} 0 V ${this.props.height}`
+      this.dTick = `M ${this.props.width-3} 0 l -5 0`
+      this.gTransform = (offset) => {
+        return `translate(0, ${offset || 0})`
+      }
+      this.textAnchor = (value) => {
+        return 'end'
+      }
+      this.labelTransform = (value) => {
+        return `translate(${this.props.width-10}px, ${value == 0 ? "8px" : value == 100 ? "-3px" : "3px"})`
+      }
+
+    /////// For X-axes
+    } else {
+      this.rangeMax = this.props.width
+      this.dAxis = `M 0 0.5 h ${this.props.width}`
+      this.dTick = `M 0 0 l 0 6`
+      this.gTransform = (offset) => {
+        return `translate(${offset || 0}, 0)`
+      }
+      this.textAnchor = (value) => {
+        return value == 0 ? "start" : value == 100 ? "end" : "middle"
+      }
+      this.labelTransform = (value) => {
+        return "translateY(20px)"
+      }
+    }
+
   }
 
-  ticks() {
-    const xScale = d3.scaleLinear()
-      .domain([0, 100])
-      .range([0, this.props.width])
-    return xScale.ticks()
+  generateTicks() {
+    let scale = d3.scaleLinear()
+      .domain([this.props.domainMin, this.props.domainMax])
+      .range([0, this.rangeMax])
+    return scale.ticks()
       .map(value => ({
         value,
-        xOffset: xScale(value)
+        offset: scale(value)
       }))
+  }
+
+  componentDidUpdate(e) {
+    if ( this.props.domainMin != e.domainMin
+      || this.props.domainMax != e.domainMax)
+    {
+      this.setState({
+        ticks: this.generateTicks()
+      })
+    }
   }
 
   render() {
@@ -28,92 +68,34 @@ class Xaxis extends React.Component {
       <svg style={{
         width: this.props.width,
         height: this.props.height,
-        marginLeft: this.props.offset
+        marginLeft: this.props.margin
       }}>
         <path
-          d={`M 0 0.5 h ${this.props.width}`}
+          d={this.dAxis}
           stroke="currentColor"
         />
-        {this.ticks().map(({ value, xOffset }) => (
-          <g
-            key={value}
-            transform={`translate(${xOffset}, 0)`}
-          >
-            <line
-              y2="6"
-              stroke="currentColor"
-            />
-            <text
+          {this.state.ticks.map(({ value, offset }) => (
+            <g
               key={value}
-              style={{
-                fontSize: "10px",
-                textAnchor: value == 0 ? "start" : value == 100 ? "end" : "middle",
-                transform: "translateY(20px)"
-              }}>
-              { value }
-            </text>
-          </g>
-        ))}
+              transform={this.gTransform(offset)}
+            >
+              <path
+                d={this.dTick}
+                stroke="currentColor"
+              />
+              <text
+                key={value}
+                style={{
+                  fontSize: "10px",
+                  textAnchor: this.textAnchor(value),
+                  transform: this.labelTransform(value)
+                }}>
+                { value }
+              </text>
+            </g>
+          ))}
       </svg>
   )}
 }
 
-
-
-/////////////////////////////////////
-///
-/// The Y axis
-///
-/////////////////////////////////////
-class Yaxis extends React.Component {
-  constructor(props) {
-    super(props)
-  }
-
-  ticks() {
-    const yScale = d3.scaleLinear()
-      .domain([0, 100])
-      .range([0, this.props.height])
-    return yScale.ticks()
-      .map(value => ({
-        value,
-        yOffset: yScale(value)
-      }))
-  }
-
-  render() {
-    return (
-      <svg style={{
-        width: this.props.width,
-        height: this.props.height,
-      }}>
-        <path
-          d={"M 22 0 V "+this.props.height}
-          stroke="currentColor"
-        />
-        {this.ticks().map(({ value, yOffset }) => (
-          <g
-            key={value}
-            transform={`translate(0,${yOffset})`}
-          >
-            <line
-              x1="16"
-              x2="22"
-              stroke="currentColor"
-            />
-            <text
-              key={value}
-              style={{
-                fontSize: "10px",
-                textAnchor: "middle",
-                transform: `translate(8px,${value == 0 ? "8px" : value == 100 ? "-3px" : "4px"})`
-              }}>
-              { value }
-            </text>
-          </g>
-        ))}
-      </svg>
-  )}
-}
-
-export {Xaxis, Yaxis}
+export {Axis}
