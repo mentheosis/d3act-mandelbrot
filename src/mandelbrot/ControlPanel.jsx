@@ -6,8 +6,13 @@ class MandelbrotControls extends React.Component {
     super(props)
     this.onCenterSelect = this.onCenterSelect.bind(this)
     this.onRenderButtonClick = this.onRenderButtonClick.bind(this)
+    this.onResetButtonClick = this.onResetButtonClick.bind(this)
     this.yAxisWidth = 45
-    this.state = {
+    this.state = this.initialState()
+  }
+
+  initialState() {
+    return {
       centerX: -0.5,
       centerY: 0,
       graphWidth: 4,
@@ -16,6 +21,18 @@ class MandelbrotControls extends React.Component {
       maxIterations: 1000000,
       potCutoff: 1000,
     }
+  }
+
+  onResetButtonClick(e) {
+    this.setState(this.initialState())
+    setTimeout( () => {
+      this.modelCanvas.manualDraw()
+    })
+
+  }
+
+  onRenderButtonClick(e) {
+    this.modelCanvas.manualDraw()
   }
 
   onCenterSelect(e) {
@@ -29,12 +46,10 @@ class MandelbrotControls extends React.Component {
       this.setState({
         graphWidth: this.state.graphWidth*0.3
       })
-      this.modelCanvas.manualDraw()
+      setTimeout( () => {
+        this.modelCanvas.manualDraw()
+      })
     }
-  }
-
-  onRenderButtonClick(e) {
-    this.modelCanvas.manualDraw()
   }
 
   render() {
@@ -114,8 +129,11 @@ class MandelbrotControls extends React.Component {
               <input type="number" value={this.state.maxIterations} onChange={event => this.setState({ maxIterations: event.target.value })}/>
             </div>
           </div>
-          <button onClick={this.onRenderButtonClick}>
+          <button className="colorful" onClick={this.onRenderButtonClick}>
             Render!
+          </button>
+          <button onClick={this.onResetButtonClick}>
+            Reset
           </button>
         </div>
       </div>
