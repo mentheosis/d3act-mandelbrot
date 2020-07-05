@@ -1,0 +1,81 @@
+/// Mixin printing a linear-gradient
+/// as well as a plain color fallback
+/// and the `-webkit-` prefixed declaration
+/// @access public
+/// @param {Keyword | Angle} $direction - Linear gradient direction
+/// @param {Arglist} $color-stops - List of color-stops composing the gradient
+@mixin linear-gradient($direction, $color-stops...) {
+  background: nth(nth($color-stops, 1), 1);
+  background: -webkit-linear-gradient(legacy-direction($direction), $color-stops);
+  background: linear-gradient($direction, $color-stops);
+}
+
+.com-mandelbrot-control-panel {
+
+  display: inline-block;
+  position: relative;
+  vertical-align: top;
+  width: 175px;
+  margin: 45px 0 0 25px;
+  font-size: 12px;
+
+
+  h1 {
+    font-size: 14px;
+  }
+
+  .control {
+    margin: 25px 0 35px 0;
+  }
+
+  .inputContainer {
+    margin: 10px 0;
+  }
+
+  .column {
+    display:inline-block;
+    width: 85px;
+  }
+
+  .label {
+    display: inline-block;
+    font-weight: bold;
+    width: 79px;
+  }
+  .label.xyLabel {
+    width:22px;
+    text-align: center;
+  }
+  .warning {
+    color: darkorange;
+  }
+
+  input {
+    display: inline;
+    width: 83px;
+    box-shadow: none;
+    outline: none;
+    background-color: none;
+    border-width: 1px;
+    border-color: #AAA;
+    border-style: solid;
+  }
+  input.xyInput{
+    width: 55px;
+  }
+
+  button {
+    margin-top: 10px;
+    background: white;
+    border: 1px solid black;
+    padding: 5px;
+    width: 170px;
+    cursor: pointer;
+  }
+  button:hover {
+    font-weight: bold;
+    color:white;
+    background: linear-gradient(165deg, #09e4eb, #f96ffa, #ffe900);
+  }
+
+}

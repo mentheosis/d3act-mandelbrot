@@ -10,15 +10,17 @@ class MandelbrotCanvas extends React.Component {
     super(props)
     this.saveContext = this.saveContext.bind(this);
     this.onMessageFromWorker = this.onMessageFromWorker.bind(this);
-    this.initializeCanvas = _.once(this.initializeCanvas)
+    this.initializeCanvas = _.once(this._initializeCanvas)
     this.drawAxesBefore = _.once(this.drawAxesBefore)
     this.drawAxesAfter = _.debounce(this.drawAxesAfter, 500, {leading:false, trailing:true})
     this.updateAxesDomain = _.debounce(this.updateAxesDomain.bind(this), 500, {leading:true, trailing:false})
+    this.calcCenter = this.calcCenter.bind(this)
+    this.manualDraw = _.debounce(this.manualDraw.bind(this),1000,{leading:true, trailing:false})
     this.workers = {}
-    this.yAxisWidth = 45
+    this.yAxisWidth = props.yAxisWidth
 
     this.state = {
-      axesXmax: 0,
+      axesXmax: 0, // will be calculated by the worker thread
       axesXmin: 0,
       axesYmax: 0,
       axesYmin: 0,
@@ -36,7 +38,6 @@ class MandelbrotCanvas extends React.Component {
     })
     */
   }
-
 
   onMessageFromWorker(m) {
     if (m.data.type == 'modelCreated') {
@@ -79,8 +80,6 @@ class MandelbrotCanvas extends React.Component {
 
   // different debounce params for after and before
   drawAxesBefore(m) {
-    this.axesData = m.data
-    console.log("axesData", this.axesData)
     this.drawAxes(this.ctx,m.data)
   }
 
@@ -104,12 +103,6 @@ class MandelbrotCanvas extends React.Component {
     ctx.stroke();
   }
 
-  initializeCanvas(ctx, data) {
-    ctx.translate(data.translateXpixel, data.translateYpixel)
-    ctx.scale(1, -1)
-  }
-
-
   saveContext(context) {
     this.ctx = context
 
@@ -126,7 +119,14 @@ class MandelbrotCanvas extends React.Component {
           canvasWidth: context.canvas.width,
           canvasHeight: context.canvas.height,
           xChunkSize: Math.round(context.canvas.width / numWorkers),
-          xChunkIndex: i
+          xChunkIndex: i,
+          centerX: this.props.centerX,
+          centerY: this.props.centerY,
+          graphWidth: this.props.graphWidth,
+          potK: this.props.potK,
+          iterK: this.props.iterK,
+          maxIterations: this.props.maxIterations,
+          potCutoff: this.props.potCutoff
         })
         worker.onmessage = this.onMessageFromWorker
         this.workers[worker.id] = worker
@@ -154,21 +154,64 @@ class MandelbrotCanvas extends React.Component {
       })
     }
 
+    ////////////////////////
+    // single click event
+    ////////////////////////
     context.canvas.addEventListener('mouseup', (e) => {
-
-      let unitsPerPixelX = this.axesData.graphWidth / this.ctx.canvas.width
-      let unitsPerPixelY = this.axesData.graphHeight / this.ctx.canvas.height
-      let clickedPointNumericX = (e.layerX - this.axesData.translateXpixel) * unitsPerPixelX
-      let clickedPointNumericY = (e.layerY - this.axesData.translateYpixel) * -unitsPerPixelY
-
-      console.log("mouseup event",this.axesData,
-        "\nNum X:", clickedPointNumericX,
-        "\nNum Y:", clickedPointNumericY,
-        "\nPix X:", e.layerX,
-        "\nPix Y:", e.layerY)
-
+      let center = this.calcCenter(e)
+      this.props.onCenterSelectFn({
+        centerX: center[0],
+        centerY: center[1]
+      })
     }, false);
 
+    ////////////////////////
+    // double click event
+    ////////////////////////
+    context.canvas.addEventListener('dblclick', (e) => {
+      let center = this.calcCenter(e)
+      this.props.onCenterSelectFn({
+        centerX: center[0],
+        centerY: center[1],
+        double: true
+      })
+    }, false);
+
+  }
+
+  calcCenter(e) {
+    let unitsPerPixelX = this.axesData.graphWidth / this.ctx.canvas.width
+    let unitsPerPixelY = this.axesData.graphHeight / this.ctx.canvas.height
+    let clickedPointNumericX = (e.layerX - this.axesData.translateXpixel) * unitsPerPixelX
+    let clickedPointNumericY = (e.layerY - this.axesData.translateYpixel) * -unitsPerPixelY
+    return [clickedPointNumericX, clickedPointNumericY]
+  }
+
+  _initializeCanvas(ctx, data) {
+    // make sure we always reset the canvas before translating again
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.translate(data.translateXpixel, data.translateYpixel)
+    ctx.scale(1, -1)
+    // save meta data used to navigate the image
+    this.axesData = data
+  }
+
+  manualDraw() {
+    // reset the _once on this method so the new round will work
+    this.initializeCanvas = _.once(this._initializeCanvas)
+
+    for (let w in this.workers) {
+      this.workers[w].postMessage({
+        type: "manualDraw",
+        centerX: this.props.centerX,
+        centerY: this.props.centerY,
+        graphWidth: this.props.graphWidth,
+        potK: this.props.potK,
+        iterK: this.props.iterK,
+        maxIterations: this.props.maxIterations,
+        potCutoff: this.props.potCutoff
+      })
+    }
   }
 
   componentDidMount() {
@@ -185,8 +228,8 @@ class MandelbrotCanvas extends React.Component {
     return (
       <div
         style={{
-          margin: "15px 2.5%",
-          width: parseInt(this.props.width)+(this.yAxisWidth*2)+10
+          width: parseInt(this.props.width)+(this.yAxisWidth*2)+10,
+          display: 'inline-block',
         }}
       >
         <Axis
@@ -236,9 +279,7 @@ class MandelbrotCanvas extends React.Component {
           domainMax = {this.state.axesXmax}
           label = 'Real component'
         />
-
       </div>
-
   )}
 }
 

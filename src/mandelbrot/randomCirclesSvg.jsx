@@ -20,30 +20,31 @@ function useInterval(callback, delay) {
   }, [delay]);
 }
 
-const GenerateDataSet = () => {
+const GenerateDataSet = (props) => {
   var set = []
   for(let i = 1; i<=10; i++) {
-    set.push([ (Math.random() * i * 2) - 5, (Math.random() * i * 2) -5 ])
+    set.push([ (Math.random() * props.width) - (props.width/2), (Math.random() * props.height) - (props.height/2) ])
   }
   return set
 }
 
-const CirclesSvg = () => {
+const CirclesSvg = (props) => {
   const [dataset, setDataset] = useState(
-    GenerateDataSet()
+    GenerateDataSet(props)
   )
   useInterval(() => {
-    const newDataset = GenerateDataSet()
+    const newDataset = GenerateDataSet(props)
     setDataset(newDataset)
-  }, 2000)
+  }, 2500)
   return (
     <svg
-      width="95vw"
-      height="40vh"
-      viewBox="-50 -20 100 40"
+      width={props.width}
+      height={props.height}
+      viewBox={`-${props.width/2} -${props.height/2} ${props.width} ${props.height}`}
       style={{
-        margin: "0 2.5% 0 2.5%",
-        border: "2px solid black"}}
+        display: "inline-block",
+        border: "1px solid black"
+      }}
     >
       {dataset.map(([x, y], i) => (
         <circle

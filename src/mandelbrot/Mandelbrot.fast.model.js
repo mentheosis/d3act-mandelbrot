@@ -3,6 +3,8 @@ class FastMandelbrot {
 
   constructor(canvasWidth, canvasHeight, xChunkSize, xChunkIndex, postMessage, id) {
     this.id = id
+    this.xChunkSize = xChunkSize
+    this.xChunkIndex = xChunkIndex
     // recreate the ctx api for posting inputs across the thread
     this.ctx = {
       fillRect: (x,y,w,h,c) => {
@@ -28,11 +30,26 @@ class FastMandelbrot {
 
     // we want our canvas to represent a virtual graph of the complex number space
     // these parameters are the size of that graph
-    this.graphWidth = 0.1 //0.00006 //0.00005 // this is the primary size param, basically the zoom level
-    this.graphHeight = this.graphWidth*0.6
+    this.graphWidth = 9 //0.1 //0.00006 //0.00005 // this is the primary size param, basically the zoom level
     this.viewportCenterX =  -0.108063000 // the graph will stay centered on this numeric coord no matter the zoom
     this.viewportCenterY =  0.89192449 // the graph will stay centered on this numeric coord no matter the zoom
 
+    this.initializeDependents()
+  }
+
+  initializeInputs(centerX, centerY, graphWidth, potK, iterK, maxIterations, potCutoff) {
+    this.viewportCenterX = centerX
+    this.viewportCenterY = centerY
+    this.graphWidth = graphWidth
+    this.potK = potK
+    this.iterK = iterK
+    this.max_iteration = maxIterations
+    this.potCutoff = potCutoff
+    this.initializeDependents()
+  }
+
+  initializeDependents() {
+    this.graphHeight = this.graphWidth*0.6
     // these allow you to set the center of the viewport to a specific numerical coordinate
     this.originTranslateXnumerical = (-1*this.viewportCenterX) + ((this.canvas.width / 2) * (this.graphWidth / this.canvas.width))
     this.originTranslateYnumerical = (this.viewportCenterY) + ((this.canvas.height / 2) * (this.graphHeight / this.canvas.height))
@@ -47,13 +64,12 @@ class FastMandelbrot {
     this.canvasLeft = this.canvasRight - this.canvas.width
 
     // allow multiple worker threads to work on different regions
-    this.rangeStartX = typeof(xChunkSize) != "undefined" ? this.canvasLeft + (xChunkSize * xChunkIndex) : this.canvasLeft
-    this.rangeEndX = typeof(xChunkSize) != "undefined" ? this.rangeStartX + xChunkSize : this.canvasRight
-    if (this.canvasRight - this.rangeEndX < xChunkSize) {
+    this.rangeStartX = typeof(this.xChunkSize) != "undefined" ? this.canvasLeft + (this.xChunkSize * this.xChunkIndex) : this.canvasLeft
+    this.rangeEndX = typeof(this.xChunkSize) != "undefined" ? this.rangeStartX + this.xChunkSize : this.canvasRight
+    if (this.canvasRight - this.rangeEndX < this.xChunkSize) {
       // fix rounding error by making sure the last worker goes all the way to the edge
       this.rangeEndX = this.canvasRight
     }
-
   }
 
   scaleX(Px, canvas, graphWidth) {
@@ -122,13 +138,13 @@ class FastMandelbrot {
     return `rgb(${r},${g},${b})`
   }
 
-  drawMandelbrot(ctx, canvas, max_iteration, eps, graphWidth, graphHeight, canvasTop, canvasRight, canvasBottom, canvasLeft) {
+  drawMandelbrot() {
     for (let Px = this.rangeStartX; Px <= this.rangeEndX; Px++) {
       let columnData = []
-      for (let Py = canvasTop; Py >= canvasBottom; Py--) {
+      for (let Py = this.canvasTop; Py >= this.canvasBottom; Py--) {
 
-            let c_r = this.scaleX(Px, canvas, graphWidth)
-            let c_i = this.scaleY(Py, canvas, graphHeight)
+            let c_r = this.scaleX(Px, this.canvas, this.graphWidth)
+            let c_i = this.scaleY(Py, this.canvas, this.graphHeight)
 
             // note that we start with c instead of 0, to avoid multiplying the derivative by 0
             let z_r = c_r
@@ -138,13 +154,14 @@ class FastMandelbrot {
             let dz_i = 0
 
             // just square eps once instead of in the loop..
-            let eps_sq = eps*eps
+            let eps_sq = this.eps*this.eps
             let iteration = 0
             let pow = 1
             let color = ''
-            while ( iteration < max_iteration) {
+            while ( iteration < this.max_iteration) {
                 if (this.c_modulus(dz_r, dz_i) <= eps_sq) {
                   color = 'black'
+                  //color = this.colorByIterations(iteration, this.max_iteration)
                   break
                 }
                 let r2 = this.c_modulus(z_r, z_i)
@@ -153,7 +170,7 @@ class FastMandelbrot {
                     color = this.colorByPotential(r2, pow, iteration)
                   }
                   else {
-                    color = this.colorByIterations(iteration, max_iteration)
+                    color = this.colorByIterations(iteration, this.max_iteration)
                   }
                   break
                 }
@@ -172,26 +189,16 @@ class FastMandelbrot {
                 iteration++
             }
 
-            if (iteration == max_iteration) {
-              color = this.colorByIterations(iteration, max_iteration)
+            if (iteration == this.max_iteration) {
+              color = this.colorByIterations(iteration, this.max_iteration)
             }
 
-            //ctx.fillRect(Px,Py,1,-1, color)
             columnData.push({Px, Py, color})
       }
-      ctx.sendColumn(columnData)
+      this.ctx.sendColumn(columnData)
     }
     //console.log("Worker finished looping",this.id, this.rangeStartX, this.rangeEndX)
     return true
-  }
-
-  draw() {
-    this.drawMandelbrot(this.ctx, this.canvas, this.max_iteration, this.eps, this.graphWidth, this.graphHeight, this.canvasTop, this.canvasRight, this.canvasBottom, this.canvasLeft)
-  }
-
-  testSquare() {
-    console.log("\n\ntest square filling rect\n", this.rangeStartX,this.canvasTop)
-    this.ctx.fillRect(this.rangeStartX, this.canvasTop, 100, -this.canvas.height, "blue")
   }
 
 }
